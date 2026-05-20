@@ -76,6 +76,7 @@ CREATE TABLE orders (
 | Servicio | Uso | Puerto |
 |---------|-----|--------|
 | **productos** | Obtiene nombre y precio del producto para calcular total | `8081` |
+| **notifications** | Envía notificaciones al crear o cancelar órdenes | `8089` |
 
 ## Configuración (variables de entorno Docker)
 
@@ -85,6 +86,7 @@ CREATE TABLE orders (
 | `SPRING_DATASOURCE_USERNAME` | Usuario de la base de datos |
 | `SPRING_DATASOURCE_PASSWORD` | Contraseña de la base de datos |
 | `FEIGN_CLIENT_PRODUCT_URL` | URL del servicio de productos |
+| `FEIGN_CLIENT_NOTIFICATION_URL` | URL del servicio de notificaciones |
 
 ## Tecnologías
 
