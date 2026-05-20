@@ -22,7 +22,7 @@ public class OrderDto {
             Double totalAmount,
             String status) {}
 
-    public record ProductDto(Long id, String name, Double price) {}
+    public record ProductDto(Long id, String name, String description, Double price) {}
 
     public record PaymentDto(String id, String status) {}
 }

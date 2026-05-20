@@ -1,5 +1,6 @@
 package com.ecommers.orders.service.impl;
 
+import com.ecommers.orders.client.NotificationClient;
 import com.ecommers.orders.client.ProductClient;
 import com.ecommers.orders.dto.OrderDto.*;
 import com.ecommers.orders.exception.OrderNotFoundException;
@@ -7,11 +8,14 @@ import com.ecommers.orders.model.Order;
 import com.ecommers.orders.repository.OrderRepository;
 import com.ecommers.orders.service.OrderService;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
+import java.util.Map;
 
+@Slf4j
 @Service
 @RequiredArgsConstructor
 public class OrderServiceImpl implements OrderService {
@@ -21,6 +25,7 @@ public class OrderServiceImpl implements OrderService {
 
     private final OrderRepository repository;
     private final ProductClient productClient;
+    private final NotificationClient notificationClient;
 
     @Override
     @Transactional
@@ -36,7 +41,10 @@ public class OrderServiceImpl implements OrderService {
         order.setTotalAmount(total);
         order.setStatus(STATUS_PENDING);
 
-        return toResponse(repository.save(order));
+        OrderResponse saved = toResponse(repository.save(order));
+        notify(saved.userId(), "ORDER_CREATED",
+                "Tu orden #" + saved.id() + " por $" + saved.totalAmount() + " fue creada y está pendiente de pago");
+        return saved;
     }
 
     @Override
@@ -76,9 +84,19 @@ public class OrderServiceImpl implements OrderService {
         }
         order.setStatus(STATUS_CANCELLED);
         repository.save(order);
+        notify(order.getUserId(), "ORDER_CANCELLED",
+                "Tu orden #" + id + " fue cancelada");
     }
 
     // ── helpers ──────────────────────────────────────────────────────────────
+
+    private void notify(Long userId, String type, String message) {
+        try {
+            notificationClient.send(Map.of("userId", userId, "type", type, "message", message));
+        } catch (Exception e) {
+            log.warn("No se pudo enviar notificación [{}] al usuario {}: {}", type, userId, e.getMessage());
+        }
+    }
 
     private Order findOrThrow(Long id) {
         return repository.findById(id)
