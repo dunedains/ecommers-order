@@ -30,6 +30,7 @@ public class OrderServiceImpl implements OrderService {
     @Override
     @Transactional
     public OrderResponse createOrder(OrderRequest request) {
+        log.info("Creando orden userId={}, productId={}, quantity={}", request.userId(), request.productId(), request.quantity());
         ProductDto product = productClient.getProductById(request.productId());
 
         double total = product.price() * request.quantity();
@@ -42,6 +43,7 @@ public class OrderServiceImpl implements OrderService {
         order.setStatus(STATUS_PENDING);
 
         OrderResponse saved = toResponse(repository.save(order));
+        log.info("Orden creada id={}, total={}", saved.id(), saved.totalAmount());
         notify(saved.userId(), "ORDER_CREATED",
                 "Tu orden #" + saved.id() + " por $" + saved.totalAmount() + " fue creada y está pendiente de pago");
         return saved;
@@ -50,12 +52,14 @@ public class OrderServiceImpl implements OrderService {
     @Override
     @Transactional(readOnly = true)
     public OrderResponse getOrderById(Long id) {
+        log.info("Buscando orden id={}", id);
         return toResponse(findOrThrow(id));
     }
 
     @Override
     @Transactional(readOnly = true)
     public List<OrderResponse> getOrdersByUser(Long userId) {
+        log.info("Listando órdenes del usuario userId={}", userId);
         return repository.findByUserId(userId).stream()
                 .map(this::toResponse)
                 .toList();
@@ -64,6 +68,7 @@ public class OrderServiceImpl implements OrderService {
     @Override
     @Transactional
     public OrderResponse updateStatus(Long id, String status) {
+        log.info("Actualizando estado de orden id={} a status={}", id, status);
         if (status == null || status.isBlank()) {
             throw new IllegalArgumentException("El estado no puede estar vacío");
         }
@@ -78,12 +83,14 @@ public class OrderServiceImpl implements OrderService {
     @Override
     @Transactional
     public void cancelOrder(Long id) {
+        log.info("Cancelando orden id={}", id);
         Order order = findOrThrow(id);
         if (STATUS_CANCELLED.equals(order.getStatus())) {
             throw new IllegalArgumentException("La orden ya está cancelada");
         }
         order.setStatus(STATUS_CANCELLED);
         repository.save(order);
+        log.info("Orden id={} cancelada exitosamente", id);
         notify(order.getUserId(), "ORDER_CANCELLED",
                 "Tu orden #" + id + " fue cancelada");
     }
