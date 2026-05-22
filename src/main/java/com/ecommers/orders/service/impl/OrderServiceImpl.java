@@ -21,7 +21,9 @@ import java.util.Map;
 public class OrderServiceImpl implements OrderService {
 
     private static final String STATUS_PENDING   = "PENDING";
+    private static final String STATUS_CONFIRMED = "CONFIRMED";
     private static final String STATUS_CANCELLED = "CANCELLED";
+    private static final List<String> VALID_STATUSES = List.of(STATUS_PENDING, STATUS_CONFIRMED, STATUS_CANCELLED);
 
     private final OrderRepository repository;
     private final ProductClient productClient;
@@ -70,13 +72,17 @@ public class OrderServiceImpl implements OrderService {
     public OrderResponse updateStatus(Long id, String status) {
         log.info("Actualizando estado de orden id={} a status={}", id, status);
         if (status == null || status.isBlank()) {
-            throw new IllegalArgumentException("El estado no puede estar vacío");
+            throw new IllegalArgumentException("El estado no puede estar vacio");
+        }
+        String upperStatus = status.toUpperCase();
+        if (!VALID_STATUSES.contains(upperStatus)) {
+            throw new IllegalArgumentException("Estado invalido: " + status + ". Valores permitidos: " + VALID_STATUSES);
         }
         Order order = findOrThrow(id);
         if (STATUS_CANCELLED.equals(order.getStatus())) {
             throw new IllegalArgumentException("No se puede modificar una orden cancelada");
         }
-        order.setStatus(status.toUpperCase());
+        order.setStatus(upperStatus);
         return toResponse(repository.save(order));
     }
 
